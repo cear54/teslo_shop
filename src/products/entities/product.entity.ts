@@ -4,7 +4,7 @@ import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 export class Product {
 
     @PrimaryGeneratedColumn('uuid')
-    id: String;
+    id: string;
 
     @Column('varchar', { unique: true })
     titulo: string

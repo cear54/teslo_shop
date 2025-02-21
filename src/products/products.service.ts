@@ -1,11 +1,13 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { validate as esUUID } from 'uuid';
 
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { Product } from './entities/product.entity';
 import { PaginationDto } from '../commond/dtos/pagination.dto';
+import { Product } from './entities/product.entity';
+
 
 
 
@@ -36,27 +38,54 @@ export class ProductsService {
   }
 
   findAll(paginationDto: PaginationDto) {
-
-    const { limit = 10, offset = 0 } = paginationDto
-
-    return this.productRepository.find({
-      take: limit,
-      skip: offset,
-      // TODO relaciones
-
-    })
+    const { limit = 10, offset = 1 } = paginationDto;
+    return this.productRepository.find({ take: limit, skip: offset })
   }
 
-  async findOne(id: string) {
+  async findOne(term: string) {
 
-    const producto = await this.productRepository.findOneBy({ id });
-    if (!producto) { throw new NotFoundException(`El ID ${id} del prducto no existe`) }
+    //let product: Product;
+    let product = await this.productRepository.findOneBy({ id: term });
 
-    return producto;
+    if (esUUID(term)) {
+      product = await this.productRepository.findOneBy({ id: term });
+    } else {
+      const queryConstruida = this.productRepository.createQueryBuilder()
+      product = await queryConstruida
+        .where('UPPER(titulo) = :titulo or slug = :slug', {
+          titulo: term.toUpperCase(),
+          slug: term.toLowerCase()
+        }).getOne();
+    }
+
+    //const producto = await this.productRepository.findOneBy({ id });
+    if (!product) { throw new NotFoundException(`El ID ${term} del prducto no existe`) }
+
+    return product;
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+
+
+  async update(id: string, updateProductDto: UpdateProductDto) {
+
+    const producto = await this.productRepository.preload({
+      id: id,
+      ...updateProductDto
+    });
+
+    if (!producto) {
+      throw new NotFoundException(`El producto con el ID ${id} no existe`)
+    }
+
+    try {
+      await this.productRepository.save(producto);
+      return producto;
+    } catch (error) {
+      throw new BadRequestException(error.driverError.sqlMessage)
+      //console.log(error)
+    }
+
+
   }
 
   async remove(id: string) {

@@ -4,13 +4,15 @@ import { IsPositive, Min } from "class-validator";
 
 export class PaginationDto {
 
-    @Optional()
+
     @IsPositive()
     @Type(() => Number)
+    @Optional()
     limit?: number;
 
-    @Optional()
+    @IsPositive()
+    //@Min(0)
     @Type(() => Number)
-    @Min(0)
+    @Optional()
     offset?: number;
 }
