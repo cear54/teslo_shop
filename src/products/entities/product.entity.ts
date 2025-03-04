@@ -1,4 +1,5 @@
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { ProductImagen } from "./product_imagen_entity";
 
 @Entity()
 export class Product {
@@ -39,8 +40,20 @@ export class Product {
     @Column({ type: 'varchar' })
     genero: string;
 
-    // tags
+    @Column({
+        type: 'varchar',
+    })
+    tags: string[];
+
     // imagenes
+    @OneToMany(
+        () => ProductImagen,
+        productoImagen => productoImagen.producto,
+        { cascade: true, eager: true }
+    )
+    imagenes?: ProductImagen[];
+
+
 
     @BeforeInsert()
     checkSlugBeforeInsert() {
@@ -51,7 +64,14 @@ export class Product {
             .replace(/[~`!@#$%^&*()+={}\[\];:\'\"<>.,\/\\\?/\s/]/g, '_');
     }
 
-    // BeforUpdate()
-
-
+    @BeforeUpdate()
+    checkSlugUpdate() {
+        this.slug = this.slug
+            .toLowerCase()
+            .replace(/[~`!@#$%^&*()+={}\[\];:\'\"<>.,\/\\\?/\s/]/g, '_');
+    }
 }
+
+
+
+
