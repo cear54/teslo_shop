@@ -7,11 +7,12 @@ import { User } from './entities/user.entity';
 import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy],
   imports: [
     ConfigModule,
 
@@ -20,13 +21,10 @@ import { ConfigModule } from '@nestjs/config';
     //! Iniciao de cambios JWT
     PassportModule.register({ defaultStrategy: 'jwt' }),
     //! Modulo asyncrono
-
-
     JwtModule.registerAsync({
       imports: [],
       inject: [],
       useFactory: () => {
-        console.log(process.env.JWT_SECRET);
         return {
           secret: process.env.JWT_SECRET || undefined,
           signOptions: {
@@ -48,6 +46,6 @@ import { ConfigModule } from '@nestjs/config';
 
 
   ],
-  exports: [TypeOrmModule]
+  exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule]
 })
 export class AuthModule { }

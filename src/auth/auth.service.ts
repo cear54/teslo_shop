@@ -7,14 +7,16 @@ import * as bcrypt from 'bcrypt';
 import { LoginUserDto } from './dto/login_user.dto';
 import { CreateUserDto } from './dto/create_user.dto';
 import { User } from './entities/user.entity';
-import { IsEmail } from 'class-validator';
-
+import { JwtPayload } from './interfaces/jwt_payload.interface';
+import { JwtService } from '@nestjs/jwt';
 
 
 @Injectable()
 export class AuthService {
 
-  constructor(@InjectRepository(User) private readonly userRepositort: Repository<User>) { }
+  constructor(@InjectRepository(User)
+  private readonly userRepositort: Repository<User>,
+    private jwtService: JwtService,) { }
 
 
   async create(createUserDto: CreateUserDto) {
@@ -32,9 +34,17 @@ export class AuthService {
 
       await this.userRepositort.save(usuario)
       //delete usuario.password;
-      const { fulName, email, id, isActive, roles } = usuario
+      const { fulName, id, isActive, roles } = usuario
       //return usuario;
-      return { email, fulName, id, isActive, roles };
+      //return { email, fulName, id, isActive, roles };
+
+
+      return {
+        ...usuario,
+        token: this.getJwtToken({ id: usuario.id })
+      };
+
+
 
     } catch (error) {
       this.handError(error);
@@ -50,7 +60,7 @@ export class AuthService {
     const user = await this.userRepositort.findOne({
 
       where: { email },
-      select: { email: true, password: true }
+      select: { email: true, password: true, id: true }
 
     });
 
@@ -63,21 +73,18 @@ export class AuthService {
       throw new UnauthorizedException('Las credenciales no son válidas (CONTRASEÑA)')
     }
 
-    return user;
+    return {
+      ...user,
+      token: this.getJwtToken({ id: user.id })
+    };
     //TODO: retornar JWT
 
-
-
-    /* try {
-       
-     } catch (error) {
-       this.handError(error);
-     }
- 
-     return;*/
   };
 
-
+  private getJwtToken(payload: JwtPayload) {
+    const token = this.jwtService.sign(payload);
+    return token;
+  }
 
 
   private handError(error: any): never {
