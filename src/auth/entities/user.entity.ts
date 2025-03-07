@@ -19,7 +19,7 @@ export class User {
     @Column('bool', { default: true })
     isActive: boolean;
 
-    @Column('text', { default: 'user' })
+    @Column('simple-array', { default: ['user'] })
     roles: string[];
 
     @BeforeInsert()

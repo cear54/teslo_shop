@@ -32,7 +32,7 @@ export class Product {
     stock: number;
 
     @Column({
-        type: 'varchar',
+        type: 'simple-array',
         //array: true,
     })
     sizes: string[];
